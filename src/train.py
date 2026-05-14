@@ -1,66 +1,66 @@
-import os
-import json
-import joblib
-
 import mlflow
 import mlflow.sklearn
-
-from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+import joblib
+import os
 
-from preprocessing import load_and_preprocess_data
-from mlflow_config import init_mlflow
+# ---------------- LOAD DATA ----------------
+df = pd.read_csv("data/raw/customer_churn.csv")
 
+# CLEAN
+df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
 
-# init MLflow + DagsHub
-init_mlflow()
+X = df.drop(columns=["Churn", "customerID"])
+y = df["Churn"]
 
-# data
-X_train, X_test, y_train, y_test = load_and_preprocess_data(
-    "../data/raw/customer_churn.csv"
+# encode simple
+X = X.replace({"Yes": 1, "No": 0, "Female": 0, "Male": 1})
+X = X.apply(pd.to_numeric, errors="coerce").fillna(0)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
 )
 
 models = {
+    "LogisticRegression": LogisticRegression(max_iter=1000),
     "RandomForest": RandomForestClassifier(),
-    "LogisticRegression": LogisticRegression(max_iter=5000, solver="liblinear")
+    "GradientBoosting": GradientBoostingClassifier()
 }
 
+best_acc = 0
 best_model = None
-best_accuracy = 0
 best_name = ""
+
+mlflow.set_experiment("churn_experiment")
 
 for name, model in models.items():
 
-    with mlflow.start_run(run_name=name):
+    with mlflow.start_run():
 
         model.fit(X_train, y_train)
         preds = model.predict(X_test)
 
         acc = accuracy_score(y_test, preds)
 
-        print(f"{name} Accuracy: {acc}")
-
+        # MLflow logs
         mlflow.log_param("model", name)
         mlflow.log_metric("accuracy", acc)
+        mlflow.sklearn.log_model(model, name)
 
-        mlflow.sklearn.log_model(model, "model")
+        print(f"{name} accuracy: {acc}")
 
-        if acc > best_accuracy:
-            best_accuracy = acc
+        if acc > best_acc:
+            best_acc = acc
             best_model = model
             best_name = name
 
+# ---------------- SAVE CHAMPION ----------------
+os.makedirs("models", exist_ok=True)
 
-# sauvegarde dossier models
-os.makedirs("../models", exist_ok=True)
+joblib.dump(best_model, "models/champion_model.pkl")
 
-# champion model
-joblib.dump(best_model, "../models/champion_model.pkl")
-
-# features (IMPORTANT pour Streamlit)
-with open("../models/features.json", "w") as f:
-    json.dump(list(X_train.columns), f)
-
-print("\n🏆 CHAMPION MODEL:", best_name)
-print("ACCURACY:", best_accuracy)
+print(f"\n🏆 CHAMPION MODEL: {best_name} | ACC: {best_acc}")

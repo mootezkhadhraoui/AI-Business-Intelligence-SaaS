@@ -23,6 +23,7 @@ try:
 except Exception as e:
     print("IMPORT ERROR:", e)
     analyze_data = None
+from src.logger import log_event
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AI Business Intelligence App", layout="wide")
@@ -83,16 +84,22 @@ if menu == "Accueil":
 
 # ---------------- PREDICTION ----------------
 elif menu == "Prédiction unitaire":
+
     st.header("🔮 Prédiction client")
 
+    # ✅ IMPORTANT: doit être défini ici
     input_data = []
+
     for feature in features:
         value = st.number_input(feature, value=0.0)
         input_data.append(value)
 
     if st.button("Prédire"):
+
         input_array = np.array(input_data).reshape(1, -1)
         prediction = model.predict(input_array)[0]
+
+        log_event("PREDICTION_SINGLE", f"{input_data} -> {prediction}")
 
         if prediction == 1:
             st.error("❌ Client risque de churn")

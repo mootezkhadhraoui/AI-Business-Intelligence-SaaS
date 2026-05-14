@@ -1,4 +1,21 @@
-venv/
-__pycache__/
-mlruns/
+# env
 .env
+
+# python
+__pycache__/
+*.pyc
+
+# virtual env
+venv/
+
+# logs
+logs/
+
+# mlflow artifacts
+mlruns/
+
+# notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
