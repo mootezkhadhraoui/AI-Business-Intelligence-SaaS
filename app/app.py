@@ -50,45 +50,48 @@ if menu == "Accueil":
 
     st.write("Bienvenue dans ton plateforme IA de churn prediction 🚀")
 
-    # Load dataset
+    # LOAD DATASET
     df = pd.read_csv("data/raw/customer_churn.csv")
 
-df["Churn"] = (
-    df["Churn"]
-    .astype(str)
-    .str.strip()
-    .map({"Yes": 1, "No": 0})
-)
+    # CLEAN CHURN
+    df["Churn"] = (
+        df["Churn"]
+        .astype(str)
+        .str.strip()
+        .map({"Yes": 1, "No": 0})
+    )
 
-df["Churn"] = pd.to_numeric(
-df["Churn"], 
-errors="coerce"
-).fillna(0)
+    df["Churn"] = pd.to_numeric(
+        df["Churn"],
+        errors="coerce"
+    ).fillna(0)
 
-    # KPIs
+    # KPI
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.metric("📦 Total clients", len(df))
 
     with col2:
-        st.metric("📉 Churn rate", f"{round(df['Churn'].mean()*100,2)}%")
+        churn_rate = round(df["Churn"].mean() * 100, 2)
+        st.metric("📉 Churn rate", f"{churn_rate}%")
 
     with col3:
-        st.metric("✅ Active clients", int((df["Churn"] == 0).sum()))
+        active_clients = int((df["Churn"] == 0).sum())
+        st.metric("✅ Active clients", active_clients)
 
     st.divider()
 
-    # Preview data
+    # DATA PREVIEW
     st.subheader("📄 Aperçu dataset")
     st.dataframe(df.head())
 
-    # Charts
+    # CHARTS
     st.subheader("📊 Churn distribution")
     st.bar_chart(df["Churn"].value_counts())
 
-    st.subheader("💰 Monthly Charges")
     if "MonthlyCharges" in df.columns:
+        st.subheader("💰 Monthly Charges")
         st.line_chart(df["MonthlyCharges"])
 
 # ---------------- PREDICTION ----------------
@@ -166,17 +169,18 @@ elif menu == "Dashboard":
 
     df = pd.read_csv(os.path.join(PROJECT_ROOT, "data", "raw", "customer_churn.csv"))
 
-df["Churn"] = (
-    df["Churn"]
-    .astype(str)
-    .str.strip()
-    .map({"Yes": 1, "No": 0})
-)
+# CLEAN CHURN
+    df["Churn"] = (
+        df["Churn"]
+        .astype(str)
+        .str.strip()
+        .map({"Yes": 1, "No": 0})
+    )
 
-df["Churn"] = pd.to_numeric(
-df["Churn"],
-errors="coerce"
-).fillna(0)
+    df["Churn"] = pd.to_numeric(
+        df["Churn"],
+        errors="coerce"
+    ).fillna(0)
 
     col1, col2, col3 = st.columns(3)
 
