@@ -21,9 +21,8 @@ import json
 try:
     from gemini_analysis import analyze_data
 except Exception as e:
-    print("GEMINI IMPORT ERROR:", e)
+    print(f"GEMINI IMPORT ERROR: {e}")
     analyze_data = None
-
 try:
     from src.logger import log_event
 except Exception as e:
