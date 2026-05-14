@@ -1,24 +1,24 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import joblib
 
 def load_and_preprocess_data(path):
 
     df = pd.read_csv(path)
 
+    # supprimer ID
     if "customerID" in df.columns:
         df.drop("customerID", axis=1, inplace=True)
 
-    df["TotalCharges"] = pd.to_numeric(
-        df["TotalCharges"],
-        errors="coerce"
-    )
+    # conversion numeric
+    if "TotalCharges" in df.columns:
+        df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 
-    df.fillna(
-        df.median(numeric_only=True),
-        inplace=True
-    )
+    # valeurs manquantes
+    df.fillna(df.median(numeric_only=True), inplace=True)
 
+    # encodage
     encoder = LabelEncoder()
 
     for col in df.select_dtypes(include="object").columns:
@@ -35,3 +35,11 @@ def load_and_preprocess_data(path):
     )
 
     return X_train, X_test, y_train, y_test
+
+
+def save_encoder(encoder, path="models/encoder.pkl"):
+    joblib.dump(encoder, path)
+
+
+def load_encoder(path="models/encoder.pkl"):
+    return joblib.load(path)
