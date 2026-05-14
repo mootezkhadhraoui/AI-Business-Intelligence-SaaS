@@ -1,13 +1,15 @@
 import sys
 import os
-sys.path.append(os.path.abspath("src"))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
 
-from utils.logger import log_event
-from gemini_analysis import analyze_data
+from logger import log_event
+from src.gemini_analysis import analyze_data
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AI Business Intelligence App", layout="wide")
