@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import joblib
 
+from utils.logger import log_event
 from gemini_analysis import analyze_data
 
 # ---------------- CONFIG ----------------
