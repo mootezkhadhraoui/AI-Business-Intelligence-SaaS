@@ -60,7 +60,10 @@ df["Churn"] = (
     .map({"Yes": 1, "No": 0})
 )
 
-df["Churn"] = pd.to_numeric(df["Churn"], errors="coerce").fillna(0)
+df["Churn"] = pd.to_numeric(
+df["Churn"], 
+errors="coerce"
+).fillna(0)
 
     # KPIs
     col1, col2, col3 = st.columns(3)
@@ -170,7 +173,10 @@ df["Churn"] = (
     .map({"Yes": 1, "No": 0})
 )
 
-df["Churn"] = pd.to_numeric(df["Churn"], errors="coerce").fillna(0)
+df["Churn"] = pd.to_numeric(
+df["Churn"],
+errors="coerce"
+).fillna(0)
 
     col1, col2, col3 = st.columns(3)
 
