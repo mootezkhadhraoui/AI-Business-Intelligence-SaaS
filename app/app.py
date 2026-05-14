@@ -109,25 +109,38 @@ elif menu == "Upload CSV":
     if file:
 
         df = pd.read_csv(file)
+
+        st.write("📊 Raw data")
         st.dataframe(df.head())
+
+        # ---------------- CLEAN ----------------
+        if "customerID" in df.columns:
+            df = df.drop(columns=["customerID"])
+
+        # encode Yes/No
+        for col in df.columns:
+            if df[col].dtype == "object":
+                df[col] = df[col].replace({
+                    "Yes": 1,
+                    "No": 0,
+                    "Female": 0,
+                    "Male": 1
+                })
+
+        # force numeric
+        df = df.apply(pd.to_numeric, errors="coerce")
+        df = df.fillna(0)
+
+        # align features
+        try:
+            df = df[features]
+        except:
+            st.error("❌ Features mismatch avec le modèle")
+            st.stop()
 
         if st.button("Lancer prédictions"):
 
-            df_clean = df.copy()
-
-            # ---------------- DROP NON FEATURES ----------------
-            drop_cols = ["customerID", "Churn"]
-            df_clean = df_clean.drop(columns=[col for col in drop_cols if col in df_clean.columns])
-
-            # ---------------- ENCODING CATEGORICAL ----------------
-            df_clean = pd.get_dummies(df_clean)
-
-            # ---------------- ALIGN WITH TRAIN FEATURES ----------------
-            df_clean = df_clean.reindex(columns=features, fill_value=0)
-
-            # ---------------- PREDICT ----------------
-            preds = model.predict(df_clean)
-
+            preds = model.predict(df)
             df["Prediction"] = preds
 
             st.dataframe(df)
