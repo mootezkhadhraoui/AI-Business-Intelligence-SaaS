@@ -138,31 +138,32 @@ elif menu == "Upload CSV":
         st.write("📊 Raw data")
         st.dataframe(df.head())
 
-        # ---------------- CLEAN ----------------
+        # ---------------- DROP ID ----------------
         if "customerID" in df.columns:
             df = df.drop(columns=["customerID"])
 
-        # encode Yes/No
-        for col in df.columns:
-            if df[col].dtype == "object":
-                df[col] = df[col].replace({
-                    "Yes": 1,
-                    "No": 0,
-                    "Female": 0,
-                    "Male": 1
-                })
+        # ---------------- CLEAN GLOBAL ----------------
+        mapping = {
+            "Yes": 1,
+            "No": 0,
+            "Female": 0,
+            "Male": 1
+        }
 
-        # force numeric
+        df = df.replace(mapping)
+
+        # convert everything safely
         df = df.apply(pd.to_numeric, errors="coerce")
         df = df.fillna(0)
 
-        # align features
+        # ---------------- ALIGN FEATURES ----------------
         try:
             df = df[features]
-        except:
-            st.error("❌ Features mismatch avec le modèle")
+        except Exception as e:
+            st.error(f"❌ Features mismatch avec le modèle: {e}")
             st.stop()
 
+        # ---------------- PREDICT ----------------
         if st.button("Lancer prédictions"):
 
             preds = model.predict(df)
