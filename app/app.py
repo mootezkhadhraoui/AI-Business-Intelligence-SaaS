@@ -53,8 +53,14 @@ if menu == "Accueil":
     # Load dataset
     df = pd.read_csv("data/raw/customer_churn.csv")
 
-    if df["Churn"].dtype == object:
-        df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
+df["Churn"] = (
+    df["Churn"]
+    .astype(str)
+    .str.strip()
+    .map({"Yes": 1, "No": 0})
+)
+
+df["Churn"] = pd.to_numeric(df["Churn"], errors="coerce").fillna(0)
 
     # KPIs
     col1, col2, col3 = st.columns(3)
@@ -157,8 +163,14 @@ elif menu == "Dashboard":
 
     df = pd.read_csv(os.path.join(PROJECT_ROOT, "data", "raw", "customer_churn.csv"))
 
-    if df["Churn"].dtype == object:
-        df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
+df["Churn"] = (
+    df["Churn"]
+    .astype(str)
+    .str.strip()
+    .map({"Yes": 1, "No": 0})
+)
+
+df["Churn"] = pd.to_numeric(df["Churn"], errors="coerce").fillna(0)
 
     col1, col2, col3 = st.columns(3)
 
