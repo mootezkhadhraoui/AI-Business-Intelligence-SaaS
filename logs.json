@@ -1,0 +1,23 @@
+[
+    {
+        "time": "2026-05-14T14:35:16.502388",
+        "event": "page_visit",
+        "data": {
+            "page": "home"
+        }
+    },
+    {
+        "time": "2026-05-14T14:57:06.009514",
+        "event": "page_visit",
+        "data": {
+            "page": "home"
+        }
+    },
+    {
+        "time": "2026-05-14T14:57:13.027603",
+        "event": "gemini_analysis",
+        "data": {
+            "rows": 7043
+        }
+    }
+]

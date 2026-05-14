@@ -1,31 +1,39 @@
-from google import genai
 import os
+import pandas as pd
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+def analyze_data(df: pd.DataFrame):
 
+    api_key = os.getenv("GEMINI_API_KEY")
 
-def analyze_data(df):
+    if not api_key:
+        return "❌ GEMINI_API_KEY introuvable dans .env"
 
-    prompt = f"""
-Tu es un data analyst expert en business intelligence.
+    client = genai.Client(api_key=api_key)
 
-Analyse ce dataset :
-
-1. Résumé business
-2. Causes du churn
-3. Insights importants
-4. Recommandations
-
-DATA:
-{df.head(20).to_string()}
+    summary = f"""
+Rows: {df.shape[0]}
+Columns: {df.shape[1]}
+Head:
+{df.head(5).to_string()}
+Missing:
+{df.isna().sum().to_string()}
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"""
+Analyse ce dataset :
 
-    return response.text
+{summary}
+"""
+        )
+
+        return response.text
+
+    except Exception as e:
+        return f"❌ Gemini error: {str(e)}"
