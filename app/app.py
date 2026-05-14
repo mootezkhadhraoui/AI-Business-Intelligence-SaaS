@@ -17,13 +17,20 @@ import numpy as np
 import joblib
 import json
 
-# ---------------- SAFE IMPORT ----------------
+# ---------------- SAFE IMPORTS ----------------
 try:
-    from src.gemini_analysis import analyze_data
+    from gemini_analysis import analyze_data
 except Exception as e:
-    print("IMPORT ERROR:", e)
+    print("GEMINI IMPORT ERROR:", e)
     analyze_data = None
-from src.logger import log_event
+
+try:
+    from src.logger import log_event
+except Exception as e:
+    print("LOGGER IMPORT ERROR:", e)
+
+    def log_event(message):
+        print(message)
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AI Business Intelligence App", layout="wide")

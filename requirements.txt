@@ -9,4 +9,4 @@ seaborn
 xgboost
 joblib
 python-dotenv
-google-generativeai
+google-genai
