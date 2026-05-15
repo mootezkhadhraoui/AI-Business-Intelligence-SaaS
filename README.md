@@ -1,156 +1,273 @@
-\# 🤖 AI Business Intelligence App (MLOps + AI)
+# AI Business Intelligence App 
 
+Une plateforme intelligente de **Business Intelligence augmentée par l’IA**, combinant :
 
+- Machine Learning
+- IA Générative (Gemini API)
+- MLOps avec MLflow & DagsHub
+- Interface Web Streamlit
+- Déploiement Cloud
+- Système Champion Model
 
-\## 📌 Description
+---
 
+#  Contexte du Projet
 
+Ce projet a été réalisé dans le cadre d’un examen pratique MLOps & IA Générative.
 
-This project is an end-to-end AI Business Intelligence platform that combines:
+L’objectif est de développer une application complète capable :
 
+- d’analyser des données clients,
+- d’effectuer des prédictions intelligentes,
+- de suivre plusieurs expérimentations ML,
+- de charger automatiquement le meilleur modèle (“Champion”),
+- d’intégrer une IA générative,
+- puis de déployer une application web professionnelle.
 
+---
 
-\- Machine Learning models (classification)
+#  Fonctionnalités
+
+##  Machine Learning
 
-\- MLOps tracking with MLflow + DagsHub
+- Nettoyage des données
+- Gestion des valeurs manquantes
+- Encodage des variables
+- Split Train/Test
+- Entraînement de plusieurs modèles :
+  - Logistic Regression
+  - Random Forest
+  - Gradient Boosting
+  - XGBoost
 
-\- Interactive Streamlit web app
+---
 
-\- Generative AI analysis using Gemini API
+##  MLOps
 
-\- Model deployment and monitoring
+- Tracking des expériences avec MLflow
+- Stockage distant avec DagsHub
+- Suivi :
+  - paramètres
+  - métriques
+  - modèles
+- Sélection automatique du meilleur modèle (Champion Model)
 
+---
 
+##  Application Streamlit
 
-\---
+L’application contient :
 
+-  Présentation du projet
+-  Prédiction unitaire
+-  Prédiction batch CSV
+-  Dashboard & visualisation
+-  Analyse IA Générative avec Gemini
 
+---
 
-\## 🚀 Features
+##  IA Générative
 
+Intégration de Gemini API pour :
 
+- analyser automatiquement les datasets,
+- générer des insights,
+- produire des explications intelligentes.
 
-\### 📊 Machine Learning
+---
 
-\- Data preprocessing (cleaning, encoding, train/test split)
+##  Déploiement
 
-\- Multiple models:
+Projet déployable sur :
 
-&#x20; - Random Forest
+- Streamlit Community Cloud
 
-&#x20; - Logistic Regression
+---
 
-&#x20; - XGBoost
+#  Technologies Utilisées
 
-&#x20; - Gradient Boosting
+- Python
+- Streamlit
+- Scikit-learn
+- MLflow
+- DagsHub
+- Pandas
+- NumPy
+- Gemini API
+- Git & GitHub
 
-\- Automatic selection of Champion model via MLflow
+---
 
-
-
-\---
-
-
-
-\### 🧠 AI Generative (Gemini)
-
-\- Business insights analysis
-
-\- Customer churn explanation
-
-\- Data-driven recommendations
-
-
-
-\---
-
-
-
-\### 📱 Streamlit Application
-
-\- Single prediction
-
-\- Batch prediction (CSV upload)
-
-\- Data dashboard
-
-\- AI analysis interface
-
-
-
-\---
-
-
-
-\### 📈 MLOps Tracking
-
-\- MLflow experiment tracking
-
-\- DagsHub integration
-
-\- Model versioning
-
-\- Metrics logging
-
-
-
-\---
-
-
-
-\### 📜 Logging System
-
-\- Prediction logs
-
-\- User actions tracking
-
-\- CSV uploads history
-
-\- AI interactions logging
-
-
-
-\---
-
-
-
-\## 🧰 Tech Stack
-
-
-
-\- Python
-
-\- Streamlit
-
-\- Scikit-learn
-
-\- MLflow
-
-\- DagsHub
-
-\- Google Gemini API
-
-\- Pandas, NumPy
-
-
-
-\---
-
-
-
-\## ⚙️ Installation
-
-
+#  Structure du Projet
+
+AI_Business_Intelligence_App/
+│
+├── app/
+│   └── app.py
+│
+├── data/
+│   └── raw/
+│       └── customer_churn.csv
+│
+├── models/
+│   ├── champion_model.pkl
+│   └── features.json
+│
+├── src/
+│   ├── train.py
+│   ├── champion.py
+│   ├── logger.py
+│   └── gemini_analysis.py
+│
+├── logs/
+├── mlruns/
+├── notebooks/
+├── requirements.txt
+├── .env
+├── .gitignore
+└── README.md
+---
+
+#  Installation
+
+##  Cloner le projet
 
 ```bash
+git clone https://github.com/VOTRE_USERNAME/AI_Business_Intelligence_App.git
+```
 
-git clone https://dagshub.com/mootez89/ai-business-intelligence-app
+```bash
+cd AI_Business_Intelligence_App
+```
 
-cd ai-business-intelligence-app
+---
+
+##  Créer un environnement virtuel
+
+### Windows
+
 
 python -m venv venv
 
-venv\\Scripts\\activate
+
+venv\Scripts\activate
+
+
+---
+
+##  Installer les dépendances
 
 pip install -r requirements.txt
 
+---
+
+#  Variables d’Environnement
+
+Créer un fichier `.env` :
+
+```env
+GEMINI_API_KEY=your_api_key
+MLFLOW_TRACKING_USERNAME=your_username
+MLFLOW_TRACKING_PASSWORD=your_token
+```
+
+---
+
+#  Lancer l’Application
+
+streamlit run app/app.py
+
+---
+
+#  MLflow & DagsHub
+
+## Tracking MLflow
+
+Les expériences sont automatiquement enregistrées avec :
+
+- accuracy
+- paramètres
+- modèles
+- runs
+
+---
+
+## DagsHub
+
+Les runs MLflow sont synchronisés avec DagsHub.
+
+### Exemple :
+
+- Expériences MLflow
+- Champion Model
+- Historique des runs
+
+---
+
+#  Champion Model System
+
+Le projet implémente un système “Champion Model”.
+
+Le meilleur modèle est automatiquement sélectionné selon :
+
+- Accuracy maximale
+
+Puis chargé dynamiquement dans l’application Streamlit.
+
+---
+
+#  Batch Prediction
+
+L’utilisateur peut :
+
+- uploader un CSV,
+- obtenir des prédictions automatiques,
+- télécharger les résultats.
+
+---
+
+#  IA Générative
+
+Gemini API permet :
+
+- l’analyse automatique des données,
+- la génération d’insights métiers,
+- l’explication des tendances du dataset.
+
+---
+
+#  Déploiement
+
+## Streamlit Cloud
+
+Déploiement possible via :
+
+https://streamlit.io/cloud
+
+
+---
+
+# Liens
+
+## GitHub
+
+https://github.com/mootezkhadhraoui/AI-Business-Intelligence-SaaS
+
+## DagsHub
+
+https://dagshub.com/mootez89/ai-business-intelligence-app
+
+## Application Déployée
+
+https://ai-business-intelligence-saas.streamlit.app/
+
+---
+
+#  Résultats
+
+- Application fonctionnelle
+- Tracking MLOps
+- IA Générative
+- Champion Model
+- Déploiement Cloud
+- Interface professionnelle
