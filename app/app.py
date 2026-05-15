@@ -7,9 +7,12 @@ from dotenv import load_dotenv
 import streamlit as st
 
 # ================= CONFIG UI =================
-st.set_page_config(page_title="AI Business Intelligence App", layout="wide")
+st.set_page_config(
+    page_title="AI Business Intelligence App",
+    layout="wide"
+)
 
-# ================= STYLE UX =================
+# ================= UX STYLE =================
 st.markdown("""
 <style>
 
@@ -21,27 +24,47 @@ h1, h2, h3 {
     color: #ffffff;
 }
 
+.stApp {
+    background: #0f1117;
+}
+
+/* Buttons */
 .stButton>button {
     background-color: #4F46E5;
     color: white;
     border-radius: 10px;
-    padding: 10px 20px;
+    padding: 0.6rem 1rem;
     border: none;
+    font-weight: 600;
 }
 
 .stButton>button:hover {
     background-color: #3730A3;
+    transform: scale(1.02);
 }
 
+/* Metrics cards */
+div[data-testid="metric-container"] {
+    background-color: #1c1f2a;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #2a2f3a;
+}
+
+/* Layout spacing */
 .block-container {
     padding-top: 2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🤖 AI Business Intelligence SaaS")
-st.success("App démarrée correctement ✅")
+# ================= HEADER =================
+st.title("🤖 AI Business Intelligence Platform")
+st.caption("MLOps • MLflow • Streamlit • Gemini AI • Smart Predictions")
+st.success("System Online ✅ All services running")
 
 # ================= ROOT =================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -56,36 +79,33 @@ load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 # ================= SAFE IMPORTS =================
 try:
     from gemini_analysis import analyze_data
-except:
+except Exception:
     analyze_data = None
 
 try:
     from src.logger import log_event
-except:
+except Exception:
     def log_event(*args, **kwargs):
         pass
 
-# ================= MODEL SAFE LOADER =================
+# ================= MODEL LOADER (SAFE + FALLBACK) =================
 def load_model_safe():
     try:
         import joblib
-        path = os.path.join(PROJECT_ROOT, "models/champion_model.pkl")
+        path = os.path.join(PROJECT_ROOT, "models", "champion_model.pkl")
 
         if os.path.exists(path):
             return joblib.load(path)
-
-    except Exception:
+    except:
         pass
 
     try:
         from src.champion import load_champion_model
         return load_champion_model()
-
     except Exception:
         return None
 
-
-# ================= LOAD FEATURES =================
+# ================= FEATURES =================
 features_path = os.path.join(PROJECT_ROOT, "models", "features.json")
 
 if not os.path.exists(features_path):
@@ -96,18 +116,21 @@ with open(features_path, "r") as f:
     features = json.load(f)
 
 # ================= SIDEBAR =================
-menu = st.sidebar.selectbox(
-    "Navigation",
-    ["Accueil", "Prédiction unitaire", "Upload CSV", "Dashboard", "IA"]
+st.sidebar.title("🧭 Navigation Panel")
+st.sidebar.info("AI SaaS Dashboard")
+
+menu = st.sidebar.radio(
+    "Choose module:",
+    ["🏠 Overview", "🔮 Prediction", "📁 Batch AI", "📊 Analytics", "🧠 AI Insights"]
 )
 
-# ================= ACCUEIL =================
-if menu == "Accueil":
+# ================= OVERVIEW =================
+if menu == "🏠 Overview":
 
     df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
     df["Churn"] = df["Churn"].map({"Yes":1,"No":0}).fillna(0)
 
-    st.title("📊 Dashboard Overview")
+    st.subheader("📊 Business Overview")
 
     col1, col2, col3 = st.columns(3)
 
@@ -120,18 +143,15 @@ if menu == "Accueil":
     col4, col5 = st.columns(2)
 
     with col4:
-        st.subheader("📊 Churn Distribution")
         st.bar_chart(df["Churn"].value_counts())
 
     with col5:
-        st.subheader("📄 Dataset Preview")
         st.dataframe(df.head(), use_container_width=True)
 
-
 # ================= PREDICTION =================
-elif menu == "Prédiction unitaire":
+elif menu == "🔮 Prediction":
 
-    st.title("🔮 AI Prediction")
+    st.subheader("🔮 Customer Churn Prediction")
 
     input_data = []
 
@@ -143,46 +163,52 @@ elif menu == "Prédiction unitaire":
 
     if st.button("🚀 Predict Now"):
 
-        with st.spinner("AI is thinking... 🤖"):
+        with st.spinner("🧠 AI model analyzing customer..."):
 
             model = load_model_safe()
 
             if model is None:
-                st.error("Model unavailable")
+                st.error("❌ Model unavailable")
             else:
-                pred = model.predict(np.array(input_data).reshape(1, -1))[0]
+                try:
+                    pred = model.predict(np.array(input_data).reshape(1, -1))[0]
 
-                log_event("prediction", str(input_data))
+                    log_event("prediction", str(input_data))
 
-                if pred == 1:
-                    st.error("❌ HIGH RISK: Customer will churn")
-                else:
-                    st.success("✅ LOW RISK: Customer retained")
+                    st.success("Analysis complete")
 
+                    if pred == 1:
+                        st.error("⚠️ HIGH RISK CUSTOMER")
+                        st.warning("Customer likely to churn")
+                    else:
+                        st.success("🟢 LOW RISK CUSTOMER")
+                        st.info("Customer retained")
 
-# ================= UPLOAD CSV =================
-elif menu == "Upload CSV":
+                except Exception as e:
+                    st.error(f"Prediction error: {e}")
 
-    st.title("📁 Batch AI Prediction")
+# ================= BATCH =================
+elif menu == "📁 Batch AI":
 
-    file = st.file_uploader("Upload CSV", type=["csv"])
+    st.subheader("📁 Batch Prediction Engine")
+
+    file = st.file_uploader("Upload CSV file", type=["csv"])
 
     if file:
 
         df = pd.read_csv(file)
-
-        st.subheader("📊 Data Preview")
         st.dataframe(df.head(), use_container_width=True)
 
         if st.button("⚡ Run Prediction"):
 
-            with st.spinner("Processing..."):
-
+            with st.spinner("⚙️ Loading model..."):
                 model = load_model_safe()
 
-                if model is None:
-                    st.error("Model unavailable")
-                    st.stop()
+            if model is None:
+                st.error("Model unavailable")
+                st.stop()
+
+            with st.spinner("📊 Processing data..."):
 
                 df = df.drop(columns=["customerID"], errors="ignore")
                 df = df.replace({"Yes":1,"No":0,"Female":0,"Male":1})
@@ -190,46 +216,51 @@ elif menu == "Upload CSV":
 
                 df = df[features]
 
+            with st.spinner("🤖 Running predictions..."):
                 preds = model.predict(df)
-                df["Prediction"] = preds
 
-                st.success("✅ Prediction completed!")
+            df["Prediction"] = preds
 
-                st.dataframe(df, use_container_width=True)
+            st.success("✅ Batch prediction completed")
 
-                st.download_button(
-                    "⬇️ Download Results",
-                    df.to_csv(index=False),
-                    "predictions.csv",
-                    "text/csv"
-                )
+            st.dataframe(df, use_container_width=True)
 
+            st.download_button(
+                "⬇️ Download Results",
+                df.to_csv(index=False),
+                "predictions.csv",
+                "text/csv"
+            )
 
-# ================= DASHBOARD =================
-elif menu == "Dashboard":
+# ================= ANALYTICS =================
+elif menu == "📊 Analytics":
 
     df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
     df["Churn"] = df["Churn"].map({"Yes":1,"No":0}).fillna(0)
 
-    st.title("📊 Analytics Dashboard")
+    st.subheader("📊 Analytics Dashboard")
 
     st.metric("Total Clients", len(df))
     st.metric("Churn Rate", f"{df['Churn'].mean()*100:.2f}%")
 
     st.bar_chart(df["Churn"].value_counts())
 
-
-# ================= IA =================
-elif menu == "IA":
+# ================= GEMINI =================
+elif menu == "🧠 AI Insights":
 
     df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
-    st.dataframe(df.head())
 
-    if analyze_data and st.button("✨ Generate Insights"):
+    st.subheader("🧠 AI Business Insights")
 
-        with st.spinner("AI analyzing data..."):
+    st.dataframe(df.head(), use_container_width=True)
 
-            result = analyze_data(df)
+    if analyze_data is None:
+        st.error("Gemini module not available")
+    else:
+        if st.button("✨ Generate Insights"):
 
-        st.success("Analysis completed")
-        st.write(result)
+            with st.spinner("AI analyzing data..."):
+                result = analyze_data(df)
+
+            st.success("Analysis completed")
+            st.write(result)
