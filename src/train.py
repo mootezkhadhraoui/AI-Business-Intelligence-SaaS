@@ -2,19 +2,20 @@ import os
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-import joblib
-
+from dotenv import load_dotenv
+load_dotenv()
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from xgboost import XGBClassifier
 
 # =======================
-# 🔗 DAGSHUB + MLFLOW SETUP
+# 🔗 DAGSHUB + MLFLOW
 # =======================
 os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/mootez89/ai-business-intelligence-app.mlflow"
 os.environ["MLFLOW_TRACKING_USERNAME"] = "mootez89"
-os.environ["MLFLOW_TRACKING_PASSWORD"] = "3fb7bc337a882debb159710bc0284510eca41ab1"
+os.environ["MLFLOW_TRACKING_PASSWORD"] = "c954a7ce876a9580b342a78f6ac3fd93eb32f197"
 
 mlflow.set_experiment("churn_experiment")
 
@@ -31,7 +32,7 @@ X = df.drop(columns=["Churn", "customerID"], errors="ignore")
 y = df["Churn"]
 
 # =======================
-# 🧹 CLEAN DATA
+# 🧹 CLEAN + ENCODING
 # =======================
 X = X.replace({
     "Yes": 1,
@@ -46,7 +47,10 @@ X = X.apply(pd.to_numeric, errors="coerce").fillna(0)
 # ✂️ SPLIT
 # =======================
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
 )
 
 # =======================
@@ -55,7 +59,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 models = {
     "LogisticRegression": LogisticRegression(max_iter=2000),
     "RandomForest": RandomForestClassifier(n_estimators=100),
-    "GradientBoosting": GradientBoostingClassifier()
+    "GradientBoosting": GradientBoostingClassifier(),
+    "XGBoost": XGBClassifier(eval_metric="logloss")
 }
 
 best_acc = 0
@@ -63,7 +68,7 @@ best_model = None
 best_name = ""
 
 # =======================
-# 🔁 TRAIN + MLflow LOG
+# 🔁 TRAIN + MLflow
 # =======================
 for name, model in models.items():
 
@@ -74,7 +79,7 @@ for name, model in models.items():
 
         acc = accuracy_score(y_test, preds)
 
-        # logs
+        # logs MLflow
         mlflow.log_param("model", name)
         mlflow.log_metric("accuracy", acc)
 
@@ -85,16 +90,13 @@ for name, model in models.items():
 
         print(f"✅ {name} accuracy: {acc}")
 
+        # best model
         if acc > best_acc:
             best_acc = acc
             best_model = model
             best_name = name
 
-# =======================
-# 🏆 SAVE CHAMPION MODEL
-# =======================
-os.makedirs("models", exist_ok=True)
-
-joblib.dump(best_model, "models/champion_model.pkl")
-
-print(f"\n🏆 CHAMPION MODEL: {best_name} | ACC: {best_acc}")
+print("\n======================")
+print(f"🏆 CHAMPION MODEL: {best_name}")
+print(f"🎯 ACCURACY: {best_acc}")
+print("======================")

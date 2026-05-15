@@ -1,21 +1,40 @@
-# env
+# ================= ENV =================
 .env
 
-# python
+# ================= PYTHON =================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# virtual env
+# ================= VIRTUAL ENV =================
 venv/
+env/
+.venv/
 
-# logs
+# ================= STREAMLIT =================
+.streamlit/
+
+# ================= LOGS =================
 logs/
+*.log
 
-# mlflow artifacts
+# ================= ML / MLFLOW =================
 mlruns/
+mlflow.db
+mlartifacts/
 
-# notebooks checkpoints
+# ================= JUPYTER =================
 .ipynb_checkpoints/
 
-# OS
+# ================= SYSTEM =================
 .DS_Store
+Thumbs.db
+
+# ================= IDE =================
+.vscode/
+.idea/
+
+# ================= MODEL FILES (OPTIONNEL) =================
+*.pkl
+*.joblib

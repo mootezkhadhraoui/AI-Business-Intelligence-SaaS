@@ -1,223 +1,235 @@
 import os
 import sys
+import json
+import numpy as np
+import pandas as pd
 from dotenv import load_dotenv
+import streamlit as st
 
-# ---------------- LOAD ENV ----------------
+# ================= CONFIG UI =================
+st.set_page_config(page_title="AI Business Intelligence App", layout="wide")
+
+# ================= STYLE UX =================
+st.markdown("""
+<style>
+
+.main {
+    background-color: #0f1117;
+}
+
+h1, h2, h3 {
+    color: #ffffff;
+}
+
+.stButton>button {
+    background-color: #4F46E5;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    border: none;
+}
+
+.stButton>button:hover {
+    background-color: #3730A3;
+}
+
+.block-container {
+    padding-top: 2rem;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🤖 AI Business Intelligence SaaS")
+st.success("App démarrée correctement ✅")
+
+# ================= ROOT =================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(BASE_DIR, "..", ".env"))
-
-# ---------------- PATH FIX ----------------
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import joblib
-import json
+# ================= ENV =================
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
-# ---------------- SAFE IMPORTS ----------------
+# ================= SAFE IMPORTS =================
 try:
     from gemini_analysis import analyze_data
-except Exception as e:
-    print(f"GEMINI IMPORT ERROR: {e}")
+except:
     analyze_data = None
+
 try:
     from src.logger import log_event
-except Exception as e:
-    print("LOGGER IMPORT ERROR:", e)
+except:
+    def log_event(*args, **kwargs):
+        pass
 
-    def log_event(message):
-        print(message)
+# ================= MODEL SAFE LOADER =================
+def load_model_safe():
+    try:
+        import joblib
+        path = os.path.join(PROJECT_ROOT, "models/champion_model.pkl")
 
-# ---------------- CONFIG ----------------
-st.set_page_config(page_title="AI Business Intelligence App", layout="wide")
+        if os.path.exists(path):
+            return joblib.load(path)
 
-st.title("🤖 AI Business Intelligence SaaS")
+    except Exception:
+        pass
 
-# ---------------- LOAD MODEL ----------------
-model = joblib.load(os.path.join(PROJECT_ROOT, "models", "champion_model.pkl"))
+    try:
+        from src.champion import load_champion_model
+        return load_champion_model()
 
-# ---------------- LOAD FEATURES ----------------
-with open(os.path.join(PROJECT_ROOT, "models", "features.json"), "r") as f:
+    except Exception:
+        return None
+
+
+# ================= LOAD FEATURES =================
+features_path = os.path.join(PROJECT_ROOT, "models", "features.json")
+
+if not os.path.exists(features_path):
+    st.error("features.json introuvable")
+    st.stop()
+
+with open(features_path, "r") as f:
     features = json.load(f)
 
-# ---------------- SIDEBAR ----------------
+# ================= SIDEBAR =================
 menu = st.sidebar.selectbox(
     "Navigation",
-    ["Accueil", "Prédiction unitaire", "Upload CSV", "Dashboard", "🧠 IA Générative"]
+    ["Accueil", "Prédiction unitaire", "Upload CSV", "Dashboard", "IA"]
 )
 
-# ---------------- ACCUEIL ----------------
+# ================= ACCUEIL =================
 if menu == "Accueil":
 
-    st.header("📊 SaaS AI Business Intelligence Dashboard")
+    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
+    df["Churn"] = df["Churn"].map({"Yes":1,"No":0}).fillna(0)
 
-    st.write("Bienvenue dans ton plateforme IA de churn prediction 🚀")
+    st.title("📊 Dashboard Overview")
 
-    # LOAD DATASET
-    df = pd.read_csv("data/raw/customer_churn.csv")
-
-    # CLEAN CHURN
-    df["Churn"] = (
-        df["Churn"]
-        .astype(str)
-        .str.strip()
-        .map({"Yes": 1, "No": 0})
-    )
-
-    df["Churn"] = pd.to_numeric(
-        df["Churn"],
-        errors="coerce"
-    ).fillna(0)
-
-    # KPI
     col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.metric("📦 Total clients", len(df))
+    col1.metric("👥 Total Clients", len(df))
+    col2.metric("📉 Churn Rate", f"{df['Churn'].mean()*100:.2f}%")
+    col3.metric("✅ Active Clients", int((df["Churn"] == 0).sum()))
 
-    with col2:
-        churn_rate = round(df["Churn"].mean() * 100, 2)
-        st.metric("📉 Churn rate", f"{churn_rate}%")
+    st.markdown("---")
 
-    with col3:
-        active_clients = int((df["Churn"] == 0).sum())
-        st.metric("✅ Active clients", active_clients)
+    col4, col5 = st.columns(2)
 
-    st.divider()
+    with col4:
+        st.subheader("📊 Churn Distribution")
+        st.bar_chart(df["Churn"].value_counts())
 
-    # DATA PREVIEW
-    st.subheader("📄 Aperçu dataset")
-    st.dataframe(df.head())
+    with col5:
+        st.subheader("📄 Dataset Preview")
+        st.dataframe(df.head(), use_container_width=True)
 
-    # CHARTS
-    st.subheader("📊 Churn distribution")
-    st.bar_chart(df["Churn"].value_counts())
 
-    if "MonthlyCharges" in df.columns:
-        st.subheader("💰 Monthly Charges")
-        st.line_chart(df["MonthlyCharges"])
-
-# ---------------- PREDICTION ----------------
+# ================= PREDICTION =================
 elif menu == "Prédiction unitaire":
 
-    st.header("🔮 Prédiction client")
+    st.title("🔮 AI Prediction")
 
-    # ✅ IMPORTANT: doit être défini ici
     input_data = []
 
-    for feature in features:
-        value = st.number_input(feature, value=0.0)
-        input_data.append(value)
+    cols = st.columns(2)
 
-    if st.button("Prédire"):
+    for i, feature in enumerate(features):
+        with cols[i % 2]:
+            input_data.append(st.number_input(feature, value=0.0))
 
-        input_array = np.array(input_data).reshape(1, -1)
-        prediction = model.predict(input_array)[0]
+    if st.button("🚀 Predict Now"):
 
-        log_event("PREDICTION_SINGLE", f"{input_data} -> {prediction}")
+        with st.spinner("AI is thinking... 🤖"):
 
-        if prediction == 1:
-            st.error("❌ Client risque de churn")
-        else:
-            st.success("✅ Client fidèle")
+            model = load_model_safe()
 
-# ---------------- UPLOAD CSV ----------------
+            if model is None:
+                st.error("Model unavailable")
+            else:
+                pred = model.predict(np.array(input_data).reshape(1, -1))[0]
+
+                log_event("prediction", str(input_data))
+
+                if pred == 1:
+                    st.error("❌ HIGH RISK: Customer will churn")
+                else:
+                    st.success("✅ LOW RISK: Customer retained")
+
+
+# ================= UPLOAD CSV =================
 elif menu == "Upload CSV":
 
-    st.header("📁 Prédiction batch")
+    st.title("📁 Batch AI Prediction")
 
-    file = st.file_uploader("Uploader CSV")
+    file = st.file_uploader("Upload CSV", type=["csv"])
 
     if file:
 
         df = pd.read_csv(file)
 
-        st.write("📊 Raw data")
-        st.dataframe(df.head())
+        st.subheader("📊 Data Preview")
+        st.dataframe(df.head(), use_container_width=True)
 
-        # ---------------- DROP ID ----------------
-        if "customerID" in df.columns:
-            df = df.drop(columns=["customerID"])
+        if st.button("⚡ Run Prediction"):
 
-        # ---------------- CLEAN GLOBAL ----------------
-        mapping = {
-            "Yes": 1,
-            "No": 0,
-            "Female": 0,
-            "Male": 1
-        }
+            with st.spinner("Processing..."):
 
-        df = df.replace(mapping)
+                model = load_model_safe()
 
-        # convert everything safely
-        df = df.apply(pd.to_numeric, errors="coerce")
-        df = df.fillna(0)
+                if model is None:
+                    st.error("Model unavailable")
+                    st.stop()
 
-        # ---------------- ALIGN FEATURES ----------------
-        try:
-            df = df[features]
-        except Exception as e:
-            st.error(f"❌ Features mismatch avec le modèle: {e}")
-            st.stop()
+                df = df.drop(columns=["customerID"], errors="ignore")
+                df = df.replace({"Yes":1,"No":0,"Female":0,"Male":1})
+                df = df.apply(pd.to_numeric, errors="coerce").fillna(0)
 
-        # ---------------- PREDICT ----------------
-        if st.button("Lancer prédictions"):
+                df = df[features]
 
-            preds = model.predict(df)
-            df["Prediction"] = preds
+                preds = model.predict(df)
+                df["Prediction"] = preds
 
-            st.dataframe(df)
-# ---------------- DASHBOARD ----------------
+                st.success("✅ Prediction completed!")
+
+                st.dataframe(df, use_container_width=True)
+
+                st.download_button(
+                    "⬇️ Download Results",
+                    df.to_csv(index=False),
+                    "predictions.csv",
+                    "text/csv"
+                )
+
+
+# ================= DASHBOARD =================
 elif menu == "Dashboard":
-    st.header("📊 SaaS Analytics Dashboard")
 
-    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data", "raw", "customer_churn.csv"))
+    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
+    df["Churn"] = df["Churn"].map({"Yes":1,"No":0}).fillna(0)
 
-# CLEAN CHURN
-    df["Churn"] = (
-        df["Churn"]
-        .astype(str)
-        .str.strip()
-        .map({"Yes": 1, "No": 0})
-    )
+    st.title("📊 Analytics Dashboard")
 
-    df["Churn"] = pd.to_numeric(
-        df["Churn"],
-        errors="coerce"
-    ).fillna(0)
+    st.metric("Total Clients", len(df))
+    st.metric("Churn Rate", f"{df['Churn'].mean()*100:.2f}%")
 
-    col1, col2, col3 = st.columns(3)
+    st.bar_chart(df["Churn"].value_counts())
 
-    with col1:
-        st.metric("📦 Total clients", len(df))
 
-    with col2:
-        st.metric("📉 Churn rate", f"{round(df['Churn'].mean()*100,2)}%")
+# ================= IA =================
+elif menu == "IA":
 
-    with col3:
-        st.metric("✅ Clients actifs", int((df["Churn"] == 0).sum()))
-
-# ---------------- IA ----------------
-elif menu == "🧠 IA Générative":
-
-    st.header("🧠 Analyse IA (Gemini)")
-
-    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data", "raw", "customer_churn.csv"))
-
+    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
     st.dataframe(df.head())
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    if analyze_data and st.button("✨ Generate Insights"):
 
-    if analyze_data is None:
-        st.error("❌ Module Gemini introuvable")
-    elif not api_key:
-        st.error("❌ GEMINI_API_KEY manquante dans .env")
-    else:
-        if st.button("Analyser avec IA"):
-            with st.spinner("Analyse en cours..."):
-                result = analyze_data(df)
-                st.success("Analyse terminée")
-                st.write(result)
+        with st.spinner("AI analyzing data..."):
+
+            result = analyze_data(df)
+
+        st.success("Analysis completed")
+        st.write(result)
