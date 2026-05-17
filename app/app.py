@@ -130,9 +130,11 @@ load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
 # ================= SAFE IMPORTS =================
 try:
-    from gemini_analysis import analyze_data
-except Exception:
+    from gemini_analysis import analyze_data, chat_with_gemini
+except Exception as e:
     analyze_data = None
+    chat_with_gemini = None
+    st.warning(f"Gemini import failed: {e}")
 
 try:
     from src.logger import log_event
@@ -205,7 +207,8 @@ menu = st.sidebar.radio(
         "🔮 Prediction",
         "📁 Batch AI",
         "📊 Analytics",
-        "🧠 AI Insights"
+        "🧠 AI Insights",
+	"💬 Chatbot"
     ]
 )
 
@@ -556,3 +559,42 @@ elif menu == "🧠 AI Insights":
             st.success("✅ AI Analysis completed")
 
             st.markdown(result)
+# ================= CHATBOT =================
+elif menu == "💬 Chatbot":
+
+    st.subheader("💬 AI Business Copilot")
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # display history
+    for msg in st.session_state.chat_history:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # input
+    user_input = st.chat_input("Ask anything about your business data...")
+
+    if user_input:
+
+        # show user message
+        st.chat_message("user").markdown(user_input)
+        st.session_state.chat_history.append({
+            "role": "user",
+            "content": user_input
+        })
+
+        # ================= FIXED BLOCK =================
+        with st.spinner("🤖 Thinking..."):
+
+            if chat_with_gemini is None:
+                response = "⚠️ Chatbot is not available (Gemini not loaded correctly)"
+            else:
+                response = chat_with_gemini(user_input, df_main)
+
+        # show AI response
+        st.chat_message("assistant").markdown(response)
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": response
+        })

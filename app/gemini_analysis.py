@@ -1,20 +1,20 @@
 import os
 import pandas as pd
 import time
-from dotenv import load_dotenv
 from google import genai
+import streamlit as st
 
-load_dotenv()
-
-API_KEY = os.getenv("GEMINI_API_KEY")
+# ================= API KEY =================
+API_KEY = st.secrets.get("GEMINI_API_KEY", None)
 
 client = genai.Client(api_key=API_KEY) if API_KEY else None
 
 
+# ================= DATA ANALYSIS =================
 def analyze_data(df: pd.DataFrame):
 
     if client is None:
-        return "⚠️ API key manquante (GEMINI_API_KEY)"
+        return "⚠️ GEMINI_API_KEY missing"
 
     summary = f"""
 Dataset Overview:
@@ -26,28 +26,53 @@ Sample data:
 {df.head(5).to_string()}
 """
 
-    # 🔥 retry system (important pour éviter 503)
-    for attempt in range(3):
+    last_error = None
 
+    for attempt in range(3):
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents="Analyse ce dataset et donne des insights business:\n" + summary
             )
-
             return response.text
 
         except Exception as e:
-            wait_time = 2 * (attempt + 1)
-            time.sleep(wait_time)
-
             last_error = str(e)
+            time.sleep(2 * (attempt + 1))
 
     return f"""
-⚠️ Gemini temporairement indisponible
+⚠️ Gemini temporarily unavailable
 
-Cause probable: surcharge API (503)
-Solution: réessayer dans quelques minutes
-
-Détail technique: {last_error}
+Reason: {last_error}
 """
+
+
+# ================= CHAT FUNCTION =================
+def chat_with_gemini(prompt: str, df: pd.DataFrame):
+
+    if client is None:
+        return "⚠️ GEMINI_API_KEY missing"
+
+    context = f"""
+You are a Business Intelligence AI assistant.
+
+Dataset info:
+Rows: {df.shape[0]}
+Columns: {df.shape[1]}
+
+Sample:
+{df.head(5).to_string()}
+
+User question:
+{prompt}
+"""
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=context
+        )
+        return response.text
+
+    except Exception as e:
+        return f"⚠️ Error: {str(e)}"
