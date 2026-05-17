@@ -5,66 +5,118 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 import streamlit as st
+import plotly.express as px
+import plotly.graph_objects as go
 
-# ================= CONFIG UI =================
+# ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="AI Business Intelligence App",
-    layout="wide"
+    page_title="AI Business Intelligence Platform",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# ================= UX STYLE =================
+# ================= CUSTOM CSS =================
 st.markdown("""
 <style>
 
-.main {
-    background-color: #0f1117;
-}
-
-h1, h2, h3 {
-    color: #ffffff;
-}
-
+/* Global */
 .stApp {
-    background: #0f1117;
+    background-color: #0E1117;
+    color: white;
+}
+
+/* Hide Streamlit menu */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: #111827;
+    border-right: 1px solid #1F2937;
+}
+
+/* Titles */
+h1, h2, h3 {
+    color: white !important;
+    font-weight: 700 !important;
+}
+
+/* Cards */
+.metric-card {
+    background: linear-gradient(135deg, #1F2937, #111827);
+    padding: 25px;
+    border-radius: 18px;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* Metric styling */
+div[data-testid="metric-container"] {
+    background: #111827;
+    border: 1px solid #374151;
+    padding: 20px;
+    border-radius: 16px;
 }
 
 /* Buttons */
 .stButton>button {
-    background-color: #4F46E5;
+    width: 100%;
+    background: linear-gradient(90deg, #4F46E5, #7C3AED);
     color: white;
-    border-radius: 10px;
-    padding: 0.6rem 1rem;
     border: none;
-    font-weight: 600;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-weight: 700;
+    transition: 0.3s;
 }
 
 .stButton>button:hover {
-    background-color: #3730A3;
-    transform: scale(1.02);
+    transform: translateY(-2px);
+    background: linear-gradient(90deg, #4338CA, #6D28D9);
 }
 
-/* Metrics cards */
-div[data-testid="metric-container"] {
-    background-color: #1c1f2a;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #2a2f3a;
+/* Inputs */
+.stTextInput input,
+.stNumberInput input {
+    background-color: #1F2937 !important;
+    color: white !important;
+    border-radius: 10px !important;
 }
 
-/* Layout spacing */
+/* Upload */
+[data-testid="stFileUploader"] {
+    background-color: #111827;
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px dashed #4F46E5;
+}
+
+/* Tables */
+[data-testid="stDataFrame"] {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+/* Main spacing */
 .block-container {
-    padding-top: 2rem;
+    padding-top: 1.5rem;
     padding-left: 2rem;
     padding-right: 2rem;
 }
 
+/* Hero section */
+.hero {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    padding: 40px;
+    border-radius: 24px;
+    color: white;
+    margin-bottom: 25px;
+}
+
 </style>
 """, unsafe_allow_html=True)
-
-# ================= HEADER =================
-st.title("🤖 AI Business Intelligence Platform")
-st.caption("MLOps • MLflow • Streamlit • Gemini AI • Smart Predictions")
-st.success("System Online ✅ All services running")
 
 # ================= ROOT =================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -88,101 +140,246 @@ except Exception:
     def log_event(*args, **kwargs):
         pass
 
-# ================= MODEL LOADER (SAFE + FALLBACK) =================
+# ================= HERO SECTION =================
+st.markdown("""
+<div class="hero">
+    <h1>🤖 AI Business Intelligence Platform</h1>
+    <p style="font-size:18px;">
+        MLOps • MLflow • DagsHub • Streamlit • Gemini AI
+    </p>
+    <p>
+        Smart churn prediction platform with real-time analytics and AI insights.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# ================= MODEL LOADER =================
+@st.cache_resource
 def load_model_safe():
+
     try:
         import joblib
-        path = os.path.join(PROJECT_ROOT, "models", "champion_model.pkl")
+
+        path = os.path.join(
+            PROJECT_ROOT,
+            "models",
+            "champion_model.pkl"
+        )
 
         if os.path.exists(path):
             return joblib.load(path)
-    except:
+
+    except Exception:
         pass
 
     try:
         from src.champion import load_champion_model
         return load_champion_model()
+
     except Exception:
         return None
 
 # ================= FEATURES =================
-features_path = os.path.join(PROJECT_ROOT, "models", "features.json")
+features_path = os.path.join(
+    PROJECT_ROOT,
+    "models",
+    "features.json"
+)
 
 if not os.path.exists(features_path):
-    st.error("features.json introuvable")
+    st.error("❌ features.json introuvable")
     st.stop()
 
 with open(features_path, "r") as f:
     features = json.load(f)
 
 # ================= SIDEBAR =================
-st.sidebar.title("🧭 Navigation Panel")
-st.sidebar.info("AI SaaS Dashboard")
+st.sidebar.markdown("# 🤖 AI SaaS")
+
+st.sidebar.markdown("---")
 
 menu = st.sidebar.radio(
-    "Choose module:",
-    ["🏠 Overview", "🔮 Prediction", "📁 Batch AI", "📊 Analytics", "🧠 AI Insights"]
+    "Navigation",
+    [
+        "🏠 Overview",
+        "🔮 Prediction",
+        "📁 Batch AI",
+        "📊 Analytics",
+        "🧠 AI Insights"
+    ]
+)
+
+st.sidebar.markdown("---")
+
+st.sidebar.success("✅ Platform Online")
+
+# ================= LOAD DATA =================
+data_path = os.path.join(
+    PROJECT_ROOT,
+    "data",
+    "raw",
+    "customer_churn.csv"
+)
+
+df_main = pd.read_csv(data_path)
+
+df_main["Churn"] = (
+    df_main["Churn"]
+    .map({"Yes": 1, "No": 0})
+    .fillna(0)
 )
 
 # ================= OVERVIEW =================
 if menu == "🏠 Overview":
 
-    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
-    df["Churn"] = df["Churn"].map({"Yes":1,"No":0}).fillna(0)
+    st.subheader("📊 Executive Dashboard")
 
-    st.subheader("📊 Business Overview")
+    total_clients = len(df_main)
+    churn_rate = round(df_main["Churn"].mean() * 100, 2)
+    active_clients = int((df_main["Churn"] == 0).sum())
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric("👥 Total Clients", len(df))
-    col2.metric("📉 Churn Rate", f"{df['Churn'].mean()*100:.2f}%")
-    col3.metric("✅ Active Clients", int((df["Churn"] == 0).sum()))
+    with col1:
+        st.metric(
+            "👥 Total Clients",
+            total_clients
+        )
 
-    st.markdown("---")
+    with col2:
+        st.metric(
+            "📉 Churn Rate",
+            f"{churn_rate}%"
+        )
 
-    col4, col5 = st.columns(2)
+    with col3:
+        st.metric(
+            "✅ Active Clients",
+            active_clients
+        )
+
+    st.markdown("## 📈 Business Analytics")
+
+    col4, col5 = st.columns([1.2, 1])
 
     with col4:
-        st.bar_chart(df["Churn"].value_counts())
+
+        churn_chart = px.pie(
+            names=["Retained", "Churned"],
+            values=[
+                active_clients,
+                total_clients - active_clients
+            ],
+            title="Customer Distribution",
+            hole=0.55
+        )
+
+        churn_chart.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0E1117",
+            plot_bgcolor="#0E1117"
+        )
+
+        st.plotly_chart(
+            churn_chart,
+            use_container_width=True
+        )
 
     with col5:
-        st.dataframe(df.head(), use_container_width=True)
+
+        contract_chart = px.histogram(
+            df_main,
+            x="tenure",
+            title="Customer Tenure Distribution"
+        )
+
+        contract_chart.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0E1117",
+            plot_bgcolor="#0E1117"
+        )
+
+        st.plotly_chart(
+            contract_chart,
+            use_container_width=True
+        )
+
+    st.markdown("## 📄 Dataset Preview")
+
+    st.dataframe(
+        df_main.head(10),
+        use_container_width=True
+    )
 
 # ================= PREDICTION =================
 elif menu == "🔮 Prediction":
 
-    st.subheader("🔮 Customer Churn Prediction")
+    st.subheader("🔮 Smart Customer Prediction")
+
+    st.info(
+        "Enter customer data to predict churn probability."
+    )
 
     input_data = []
 
     cols = st.columns(2)
 
     for i, feature in enumerate(features):
+
         with cols[i % 2]:
-            input_data.append(st.number_input(feature, value=0.0))
 
-    if st.button("🚀 Predict Now"):
+            value = st.number_input(
+                feature,
+                value=0.0
+            )
 
-        with st.spinner("🧠 AI model analyzing customer..."):
+            input_data.append(value)
+
+    if st.button("🚀 Predict Customer"):
+
+        with st.spinner("🤖 AI model analyzing..."):
 
             model = load_model_safe()
 
             if model is None:
                 st.error("❌ Model unavailable")
             else:
+
                 try:
-                    pred = model.predict(np.array(input_data).reshape(1, -1))[0]
 
-                    log_event("prediction", str(input_data))
+                    prediction = model.predict(
+                        np.array(input_data).reshape(1, -1)
+                    )[0]
 
-                    st.success("Analysis complete")
+                    log_event(
+                        "prediction",
+                        str(input_data)
+                    )
 
-                    if pred == 1:
-                        st.error("⚠️ HIGH RISK CUSTOMER")
-                        st.warning("Customer likely to churn")
+                    st.success("✅ Prediction completed")
+
+                    if prediction == 1:
+
+                        st.error("⚠️ HIGH CHURN RISK")
+
+                        st.markdown("""
+                        ### 🔴 Customer likely to churn
+
+                        Recommended actions:
+                        - Offer retention discount
+                        - Contact customer support
+                        - Send loyalty promotion
+                        """)
+
                     else:
-                        st.success("🟢 LOW RISK CUSTOMER")
-                        st.info("Customer retained")
+
+                        st.success("🟢 LOW CHURN RISK")
+
+                        st.markdown("""
+                        ### ✅ Customer likely retained
+
+                        Customer relationship is stable.
+                        """)
 
                 except Exception as e:
                     st.error(f"Prediction error: {e}")
@@ -192,75 +389,170 @@ elif menu == "📁 Batch AI":
 
     st.subheader("📁 Batch Prediction Engine")
 
-    file = st.file_uploader("Upload CSV file", type=["csv"])
+    uploaded_file = st.file_uploader(
+        "Upload CSV File",
+        type=["csv"]
+    )
 
-    if file:
+    if uploaded_file:
 
-        df = pd.read_csv(file)
-        st.dataframe(df.head(), use_container_width=True)
+        df = pd.read_csv(uploaded_file)
 
-        if st.button("⚡ Run Prediction"):
+        st.markdown("### 📄 Uploaded Dataset")
 
-            with st.spinner("⚙️ Loading model..."):
+        st.dataframe(
+            df.head(),
+            use_container_width=True
+        )
+
+        if st.button("⚡ Run AI Prediction"):
+
+            with st.spinner("🤖 Processing predictions..."):
+
                 model = load_model_safe()
 
-            if model is None:
-                st.error("Model unavailable")
-                st.stop()
+                if model is None:
+                    st.error("❌ Model unavailable")
+                    st.stop()
 
-            with st.spinner("📊 Processing data..."):
+                try:
 
-                df = df.drop(columns=["customerID"], errors="ignore")
-                df = df.replace({"Yes":1,"No":0,"Female":0,"Male":1})
-                df = df.apply(pd.to_numeric, errors="coerce").fillna(0)
+                    original_df = df.copy()
 
-                df = df[features]
+                    df = df.drop(
+                        columns=["customerID"],
+                        errors="ignore"
+                    )
 
-            with st.spinner("🤖 Running predictions..."):
-                preds = model.predict(df)
+                    df = df.replace({
+                        "Yes": 1,
+                        "No": 0,
+                        "Female": 0,
+                        "Male": 1
+                    })
 
-            df["Prediction"] = preds
+                    df = df.apply(
+                        pd.to_numeric,
+                        errors="coerce"
+                    ).fillna(0)
 
-            st.success("✅ Batch prediction completed")
+                    df = df[features]
 
-            st.dataframe(df, use_container_width=True)
+                    preds = model.predict(df)
 
-            st.download_button(
-                "⬇️ Download Results",
-                df.to_csv(index=False),
-                "predictions.csv",
-                "text/csv"
-            )
+                    original_df["Prediction"] = preds
+
+                    st.success(
+                        "✅ Batch prediction completed"
+                    )
+
+                    st.dataframe(
+                        original_df,
+                        use_container_width=True
+                    )
+
+                    csv = original_df.to_csv(
+                        index=False
+                    )
+
+                    st.download_button(
+                        label="⬇️ Download Predictions",
+                        data=csv,
+                        file_name="predictions.csv",
+                        mime="text/csv"
+                    )
+
+                except Exception as e:
+                    st.error(f"Batch error: {e}")
 
 # ================= ANALYTICS =================
 elif menu == "📊 Analytics":
 
-    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
-    df["Churn"] = df["Churn"].map({"Yes":1,"No":0}).fillna(0)
+    st.subheader("📊 Advanced Analytics")
 
-    st.subheader("📊 Analytics Dashboard")
+    col1, col2 = st.columns(2)
 
-    st.metric("Total Clients", len(df))
-    st.metric("Churn Rate", f"{df['Churn'].mean()*100:.2f}%")
+    with col1:
 
-    st.bar_chart(df["Churn"].value_counts())
+        chart1 = px.histogram(
+            df_main,
+            x="MonthlyCharges",
+            nbins=30,
+            title="Monthly Charges Distribution"
+        )
 
-# ================= GEMINI =================
+        chart1.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0E1117",
+            plot_bgcolor="#0E1117"
+        )
+
+        st.plotly_chart(
+            chart1,
+            use_container_width=True
+        )
+
+    with col2:
+
+        chart2 = px.scatter(
+            df_main,
+            x="tenure",
+            y="MonthlyCharges",
+            color="Churn",
+            title="Tenure vs Monthly Charges"
+        )
+
+        chart2.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0E1117",
+            plot_bgcolor="#0E1117"
+        )
+
+        st.plotly_chart(
+            chart2,
+            use_container_width=True
+        )
+
+    st.markdown("## 📊 Churn Comparison")
+
+    churn_bar = px.bar(
+        df_main["Churn"].value_counts(),
+        title="Churn Distribution"
+    )
+
+    churn_bar.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="#0E1117",
+        plot_bgcolor="#0E1117"
+    )
+
+    st.plotly_chart(
+        churn_bar,
+        use_container_width=True
+    )
+
+# ================= AI INSIGHTS =================
 elif menu == "🧠 AI Insights":
 
-    df = pd.read_csv(os.path.join(PROJECT_ROOT, "data/raw/customer_churn.csv"))
+    st.subheader("🧠 Gemini AI Business Insights")
 
-    st.subheader("🧠 AI Business Insights")
-
-    st.dataframe(df.head(), use_container_width=True)
+    st.dataframe(
+        df_main.head(),
+        use_container_width=True
+    )
 
     if analyze_data is None:
-        st.error("Gemini module not available")
+
+        st.error("❌ Gemini module unavailable")
+
     else:
-        if st.button("✨ Generate Insights"):
 
-            with st.spinner("AI analyzing data..."):
-                result = analyze_data(df)
+        if st.button("✨ Generate AI Insights"):
 
-            st.success("Analysis completed")
-            st.write(result)
+            with st.spinner("🤖 Gemini analyzing dataset..."):
+
+                result = analyze_data(df_main)
+
+            st.success("✅ AI Analysis completed")
+
+            st.markdown(result)
