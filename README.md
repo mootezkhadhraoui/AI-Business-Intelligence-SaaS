@@ -76,6 +76,19 @@ Intégration de Gemini API pour :
 
 ---
 
+## Chatbot (AI Copilot)
+
+Le chatbot permet :
+
+- poser des questions sur les données
+- comprendre le churn des clients
+- analyser les tendances business
+- expliquer les prédictions du modèle
+- donner des recommandations
+- assister la prise de décision
+
+---
+
 ##  Déploiement
 
 Projet déployable sur :
@@ -161,17 +174,6 @@ pip install -r requirements.txt
 
 ---
 
-#  Variables d’Environnement
-
-Créer un fichier `.env` :
-
-```env
-GEMINI_API_KEY=your_api_key
-MLFLOW_TRACKING_USERNAME=your_username
-MLFLOW_TRACKING_PASSWORD=your_token
-```
-
----
 
 #  Lancer l’Application
 
@@ -196,12 +198,6 @@ Les expériences sont automatiquement enregistrées avec :
 
 Les runs MLflow sont synchronisés avec DagsHub.
 
-### Exemple :
-
-- Expériences MLflow
-- Champion Model
-- Historique des runs
-
 ---
 
 #  Champion Model System
@@ -223,16 +219,6 @@ L’utilisateur peut :
 - uploader un CSV,
 - obtenir des prédictions automatiques,
 - télécharger les résultats.
-
----
-
-#  IA Générative
-
-Gemini API permet :
-
-- l’analyse automatique des données,
-- la génération d’insights métiers,
-- l’explication des tendances du dataset.
 
 ---
 
@@ -265,9 +251,11 @@ https://ai-business-intelligence-saas.streamlit.app/
 
 #  Résultats
 
-- Application fonctionnelle
-- Tracking MLOps
-- IA Générative
-- Champion Model
-- Déploiement Cloud
-- Interface professionnelle
+Application fonctionnelle
+Pipeline ML complet
+MLOps intégré
+IA générative
+Chatbot intelligent
+Champion model automatique
+Déploiement cloud
+Interface professionnelle
